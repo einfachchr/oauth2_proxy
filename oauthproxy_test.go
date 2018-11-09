@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitly/oauth2_proxy/providers"
+	"github.com/einfachchr/oauth2_proxy/providers"
 	"github.com/mbland/hmacauth"
 	"github.com/stretchr/testify/assert"
 )
