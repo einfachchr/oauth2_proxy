@@ -80,6 +80,7 @@ func (p *OIDCProvider) redeemRefreshToken(s *SessionState) (err error) {
 		return fmt.Errorf("unable to update session: %v", err)
 	}
 	s.AccessToken = newSession.AccessToken
+	s.IdToken = newSession.IdToken
 	s.RefreshToken = newSession.RefreshToken
 	s.ExpiresOn = newSession.ExpiresOn
 	s.Email = newSession.Email
@@ -121,4 +122,14 @@ func (p *OIDCProvider) createSessionState(token *oauth2.Token, ctx context.Conte
 		ExpiresOn:    token.Expiry,
 		Email:        claims.Email,
 	}, nil
+}
+
+func (p *OIDCProvider) ValidateSessionState(s *SessionState) bool {
+	ctx := context.Background()
+	_, err := p.Verifier.Verify(ctx, s.IdToken)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
