@@ -81,6 +81,8 @@ type Options struct {
 
 	SignatureKey string `flag:"signature-key" cfg:"signature_key" env:"OAUTH2_PROXY_SIGNATURE_KEY"`
 
+	RedirectToPath bool `flag:"redirect-to-path" cfg:"redirect_to_path"`
+
 	// internal values that are set after config validation
 	redirectURL   *url.URL
 	proxyURLs     []*url.URL
@@ -117,6 +119,7 @@ func NewOptions() *Options {
 		ApprovalPrompt:       "force",
 		RequestLogging:       true,
 		RequestLoggingFormat: defaultRequestLoggingFormat,
+		RedirectToPath:       false,
 	}
 }
 

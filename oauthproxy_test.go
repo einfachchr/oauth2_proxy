@@ -907,3 +907,35 @@ func TestRequestSignaturePostRequest(t *testing.T) {
 	assert.Equal(t, 200, st.rw.Code)
 	assert.Equal(t, st.rw.Body.String(), "signatures match")
 }
+
+func TestGetRedirectToPath(t *testing.T) {
+	opts := NewOptions()
+	opts.RedirectToPath = true
+	opts.Validate()
+
+	proxy := NewOAuthProxy(opts, func(string) bool { return true })
+
+	req, _ := http.NewRequest("GET", "/foo/bar", nil)
+
+	redirect, err := proxy.GetRedirect(req)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, "/foo/bar", redirect)
+}
+
+func TestGetWithoutRedirectToPath(t *testing.T) {
+	opts := NewOptions()
+	opts.RedirectToPath = false
+	opts.Validate()
+
+	proxy := NewOAuthProxy(opts, func(string) bool { return true })
+
+	req, _ := http.NewRequest("GET", "/foo/bar", nil)
+
+	redirect, err := proxy.GetRedirect(req)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, "/", redirect)
+}

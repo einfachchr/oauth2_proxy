@@ -83,6 +83,8 @@ func main() {
 
 	flagSet.String("signature-key", "", "GAP-Signature request signature key (algorithm:secretkey)")
 
+	flagSet.Bool("redirect-to-path", false, "allow deeplinks - after oauth-authorization redirect to RequestURI, not /")
+
 	flagSet.Parse(os.Args[1:])
 
 	if *showVersion {

@@ -208,6 +208,7 @@ Usage of oauth2_proxy:
   -provider string: OAuth provider (default "google")
   -proxy-prefix string: the url root path that this proxy should be nested under (e.g. /<oauth2>/sign_in) (default "/oauth2")
   -redeem-url string: Token redemption endpoint
+  -redirect-to-path: allow deeplinks - after oauth-authorization redirect to RequestURI, not /
   -redirect-url string: the OAuth Redirect URL. ie: "https://internalapp.yourcompany.com/oauth2/callback"
   -request-logging: Log requests to stdout (default true)
   -request-logging-format: Template for request log lines (see "Logging Format" paragraph below)

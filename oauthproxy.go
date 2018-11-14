@@ -72,6 +72,7 @@ type OAuthProxy struct {
 	skipAuthRegex       []string
 	skipAuthPreflight   bool
 	compiledRegex       []*regexp.Regexp
+	RedirectToPath      bool
 	templates           *template.Template
 	Footer              string
 }
@@ -207,6 +208,7 @@ func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
 		SetAuthorization:   opts.SetAuthorization,
 		PassAuthorization:  opts.PassAuthorization,
 		SkipProviderButton: opts.SkipProviderButton,
+		RedirectToPath:     opts.RedirectToPath,
 		CookieCipher:       cipher,
 		templates:          loadTemplates(opts.CustomTemplatesDir),
 		Footer:             opts.Footer,
@@ -506,6 +508,11 @@ func (p *OAuthProxy) ManualSignIn(rw http.ResponseWriter, req *http.Request) (st
 }
 
 func (p *OAuthProxy) GetRedirect(req *http.Request) (redirect string, err error) {
+
+	if p.RedirectToPath {
+		return req.URL.RequestURI(), nil
+	}
+
 	err = req.ParseForm()
 	if err != nil {
 		return
