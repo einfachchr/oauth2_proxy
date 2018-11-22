@@ -3,6 +3,7 @@ package main
 import (
 	"crypto"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -938,4 +939,49 @@ func TestGetWithoutRedirectToPath(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, "/", redirect)
+}
+
+func TestClearSplittedCookie(t *testing.T) {
+	p := OAuthProxy{CookieName: "oauth2"}
+	var rw = httptest.NewRecorder()
+	req := httptest.NewRequest("get", "/", nil)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "test1",
+		Value: "test1",
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  "oauth2-0",
+		Value: "oauth2-0",
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  "oauth2-1",
+		Value: "oauth2-1",
+	})
+
+	p.ClearSessionCookie(rw, req)
+	header := rw.Header()
+
+	assert.Equal(t, 3, len(header["Set-Cookie"]), "should have 3 set-cookie header entries")
+}
+
+func TestClearNotSplittedCookie(t *testing.T) {
+	p := OAuthProxy{CookieName: "oauth2", CookieDomain: "abc"}
+	var rw = httptest.NewRecorder()
+	req := httptest.NewRequest("get", "/", nil)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "test1",
+		Value: "test1",
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  "oauth2",
+		Value: "oauth2",
+	})
+
+	p.ClearSessionCookie(rw, req)
+	header := rw.Header()
+
+	fmt.Printf("%#v\n", header)
+	assert.Equal(t, 1, len(header["Set-Cookie"]), "should have 1 set-cookie header entries")
 }
