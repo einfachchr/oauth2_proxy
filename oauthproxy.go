@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -75,6 +76,8 @@ type OAuthProxy struct {
 	RedirectToPath      bool
 	templates           *template.Template
 	Footer              string
+	LogoutURL           string
+	ClientID            string
 }
 
 type UpstreamProxy struct {
@@ -212,6 +215,8 @@ func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
 		CookieCipher:       cipher,
 		templates:          loadTemplates(opts.CustomTemplatesDir),
 		Footer:             opts.Footer,
+		LogoutURL:          opts.LogoutURL,
+		ClientID:           opts.ClientID,
 	}
 }
 
@@ -604,6 +609,22 @@ func (p *OAuthProxy) SignIn(rw http.ResponseWriter, req *http.Request) {
 
 func (p *OAuthProxy) SignOut(rw http.ResponseWriter, req *http.Request) {
 	p.ClearSessionCookie(rw, req)
+
+	// OICD supports invalidation the session in the provider. This is a draft feature
+	// of OpenID Connect.
+	// This is an ugly hack to use that feature only if we're running with OpenID Connect
+	if len(p.LogoutURL) > 0 {
+
+		// POST http://localhost:8080/auth/realms/<my_realm>/protocol/openid-connect/logout
+		// Authorization: Bearer <access_token>
+		// Content-Type: application/x-www-form-urlencoded
+
+		// client_id=<my_client_id>&refresh_token=<refresh_token>
+		//oicd.LogoutURL
+		p.PostForLogout()
+
+	}
+
 	http.Redirect(rw, req, "/", 302)
 }
 
@@ -839,4 +860,30 @@ func (p *OAuthProxy) CheckBasicAuth(req *http.Request) (*providers.SessionState,
 		return &providers.SessionState{User: pair[0]}, nil
 	}
 	return nil, fmt.Errorf("%s not in HtpasswdFile", pair[0])
+}
+
+func (p *OAuthProxy) PostForLogout(session *providers.SessionState) {
+	req, err := http.NewRequest("POST", p.LogoutURL, nil)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("client_id", p.ClientID)
+	req.Header.Set("refresh_token", session.RefreshToken)
+
+	log.Printf("Logout-Request: %#v", req)
+
+	// POST http://localhost:8080/auth/realms/<my_realm>/protocol/openid-connect/logout
+	// Authorization: Bearer <access_token>
+	// Content-Type: application/x-www-form-urlencoded
+
+	// client_id=<my_client_id>&refresh_token=<refresh_token>
+	//oicd.LogoutURL
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	log.Printf("Logout-Response: %s -> %s", resp.Status, respBody)
 }

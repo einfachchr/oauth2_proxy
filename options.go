@@ -70,6 +70,7 @@ type Options struct {
 	OIDCIssuerURL     string `flag:"oidc-issuer-url" cfg:"oidc_issuer_url"`
 	LoginURL          string `flag:"login-url" cfg:"login_url"`
 	RedeemURL         string `flag:"redeem-url" cfg:"redeem_url"`
+	LogoutURL         string `flag:"logout-url" cfg:"logout_url"`
 	ProfileURL        string `flag:"profile-url" cfg:"profile_url"`
 	ProtectedResource string `flag:"resource" cfg:"resource"`
 	ValidateURL       string `flag:"validate-url" cfg:"validate_url"`

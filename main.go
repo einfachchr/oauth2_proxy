@@ -75,6 +75,7 @@ func main() {
 	flagSet.String("oidc-issuer-url", "", "OpenID Connect issuer URL (ie: https://accounts.google.com)")
 	flagSet.String("login-url", "", "Authentication endpoint")
 	flagSet.String("redeem-url", "", "Token redemption endpoint")
+	flagSet.String("logout-url", "", "Logout endpoint")
 	flagSet.String("profile-url", "", "Profile access endpoint")
 	flagSet.String("resource", "", "The resource that is protected (Azure AD only)")
 	flagSet.String("validate-url", "", "Access token validation endpoint")
