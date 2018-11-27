@@ -621,7 +621,11 @@ func (p *OAuthProxy) SignOut(rw http.ResponseWriter, req *http.Request) {
 
 		// client_id=<my_client_id>&refresh_token=<refresh_token>
 		//oicd.LogoutURL
-		p.PostForLogout()
+		user, ok := p.ManualSignIn(rw, req)
+		if ok {
+			session := &providers.SessionState{User: user}
+			p.PostForLogout(session)
+		}
 
 	}
 

@@ -3,7 +3,7 @@ vendor
 dist
 .godeps
 *.exe
-
+src
 
 # Go.gitignore
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
@@ -24,6 +24,7 @@ _test
 _cgo_defun.c
 _cgo_gotypes.go
 _cgo_export.*
+*.code-workspace
 
 _testmain.go
 
