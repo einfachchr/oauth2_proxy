@@ -877,26 +877,7 @@ func (p *OAuthProxy) PostForLogout(session *providers.SessionState) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	// -> https://stackoverflow.com/a/19253970
-
 	log.Printf("Logout-Request: %#v", req)
-
-	// POST http://localhost:8080/auth/realms/<my_realm>/protocol/openid-connect/logout
-	// Authorization: Bearer <access_token>
-	// Content-Type: application/x-www-form-urlencoded
-
-	// client_id=<my_client_id>&refresh_token=<refresh_token>&client_secret=<abc>
-
-	// https://m9-keycloak.obc.otto.de/auth/realms/OTTO/protocol/openid-connect/logout
-
-	// client := &http.Client{}
-	// r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
-	// r.Header.Add("Authorization", "auth_token=\"XXXXXXX\"")
-	// r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	// r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-
-	// resp, _ := client.Do(r)
-	// fmt.Println(resp.Status)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
