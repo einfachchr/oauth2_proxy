@@ -12,6 +12,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,6 +79,7 @@ type OAuthProxy struct {
 	Footer              string
 	LogoutURL           string
 	ClientID            string
+	ClientSecret        string
 }
 
 type UpstreamProxy struct {
@@ -217,6 +219,7 @@ func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
 		Footer:             opts.Footer,
 		LogoutURL:          opts.LogoutURL,
 		ClientID:           opts.ClientID,
+		ClientSecret:       opts.ClientSecret,
 	}
 }
 
@@ -608,27 +611,24 @@ func (p *OAuthProxy) SignIn(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (p *OAuthProxy) SignOut(rw http.ResponseWriter, req *http.Request) {
-	p.ClearSessionCookie(rw, req)
 
 	// OICD supports invalidation the session in the provider. This is a draft feature
 	// of OpenID Connect.
 	// This is an ugly hack to use that feature only if we're running with OpenID Connect
 	if len(p.LogoutURL) > 0 {
-
-		// POST http://localhost:8080/auth/realms/<my_realm>/protocol/openid-connect/logout
-		// Authorization: Bearer <access_token>
-		// Content-Type: application/x-www-form-urlencoded
-
-		// client_id=<my_client_id>&refresh_token=<refresh_token>
-		//oicd.LogoutURL
-		user, ok := p.ManualSignIn(rw, req)
-		if ok {
-			session := &providers.SessionState{User: user}
-			p.PostForLogout(session)
+		session, _, err := p.LoadCookiedSession(req)
+		if err != nil {
+			log.Printf("Error in logout %s", err)
 		}
 
+		if _, err := p.provider.RefreshSessionIfNeeded(session); err != nil {
+			log.Printf("Error in logout -> error refreshing access token %s %s", err, session)
+		}
+
+		p.PostForLogout(session)
 	}
 
+	p.ClearSessionCookie(rw, req)
 	http.Redirect(rw, req, "/", 302)
 }
 
@@ -867,11 +867,17 @@ func (p *OAuthProxy) CheckBasicAuth(req *http.Request) (*providers.SessionState,
 }
 
 func (p *OAuthProxy) PostForLogout(session *providers.SessionState) {
-	req, err := http.NewRequest("POST", p.LogoutURL, nil)
+
+	data := url.Values{}
+	data.Set("client_id", p.ClientID)
+	data.Add("refresh_token", session.RefreshToken)
+	data.Add("client_secret", p.ClientSecret)
+
+	req, err := http.NewRequest("POST", p.LogoutURL, strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
-	req.Header.Set("client_id", p.ClientID)
-	req.Header.Set("refresh_token", session.RefreshToken)
+	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	// -> https://stackoverflow.com/a/19253970
 
 	log.Printf("Logout-Request: %#v", req)
 
@@ -879,8 +885,18 @@ func (p *OAuthProxy) PostForLogout(session *providers.SessionState) {
 	// Authorization: Bearer <access_token>
 	// Content-Type: application/x-www-form-urlencoded
 
-	// client_id=<my_client_id>&refresh_token=<refresh_token>
-	//oicd.LogoutURL
+	// client_id=<my_client_id>&refresh_token=<refresh_token>&client_secret=<abc>
+
+	// https://m9-keycloak.obc.otto.de/auth/realms/OTTO/protocol/openid-connect/logout
+
+	// client := &http.Client{}
+	// r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
+	// r.Header.Add("Authorization", "auth_token=\"XXXXXXX\"")
+	// r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	// r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	// resp, _ := client.Do(r)
+	// fmt.Println(resp.Status)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
