@@ -161,7 +161,7 @@ func (o *Options) Validate() error {
 		// Configure discoverable provider data.
 		provider, err := oidc.NewProvider(context.Background(), o.OIDCIssuerURL)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error creating OICD Provider for IssuerURL: %s -> %s", o.OIDCIssuerURL, err)
 		}
 		o.oidcVerifier = provider.Verifier(&oidc.Config{
 			ClientID: o.ClientID,
